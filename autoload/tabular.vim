@@ -110,14 +110,19 @@ endfunction
 " Like split(), but include the delimiters as elements
 " All odd numbered elements are delimiters
 " All even numbered elements are non-delimiters (including zero)
-function! s:SplitDelim(string, delim)
+function! s:SplitDelim(string, delim, blimit)
   let rv = []
   let beg = 0
 
   let len = len(a:string)
   let searchoff = 0
+  let btimes = 0
 
   while 1
+    if a:blimit > 0 && btimes >= a:blimit
+      break
+    endif
+
     let mid = match(a:string, a:delim, beg + searchoff, 1)
     if mid == -1 || mid == len
       break
@@ -129,6 +134,7 @@ function! s:SplitDelim(string, delim)
     if length == 0 && beg == mid
       " Zero-length match for a zero-length delimiter - advance past it
       let searchoff += 1
+      let btimes += 1
       continue
     endif
 
@@ -142,6 +148,7 @@ function! s:SplitDelim(string, delim)
 
     let beg = mid + length
     let searchoff = 0
+    let btimes += 1
   endwhile
 
   let rv += [ strpart(a:string, beg) ]
@@ -194,7 +201,7 @@ if !exists("g:tabular_default_format")
   let g:tabular_default_format = "l1"
 endif
 
-let s:formatelempat = '\%([lrc]\d\+\)'
+let s:formatelempat = '\%([blrc]\d\+\)'
 
 function! tabular#ElementFormatPattern()
   return s:formatelempat
@@ -213,6 +220,19 @@ function! tabular#TabularizeStrings(strings, delim, ...)
 
   let formatstr = (a:0 ? a:1 : g:tabular_default_format)
 
+  let blimitstr = matchstr(formatstr, "^b\\d\\+")
+
+  if len(blimitstr) > 0
+     let blimit = blimitstr[1:]
+     let formatstr = formatstr[len(blimitstr):]
+  else
+     let blimit = 0
+  endif
+
+  if len(formatstr) == 0
+    let formatstr = g:tabular_default_format
+  endif
+
   if formatstr !~? s:formatelempat . '\+'
     echoerr "Tabular: Invalid format \"" . formatstr . "\" specified!"
     return 1
@@ -220,7 +240,7 @@ function! tabular#TabularizeStrings(strings, delim, ...)
 
   let format = split(formatstr, s:formatelempat . '\zs')
 
-  let lines = map(a:strings, 's:SplitDelim(v:val, a:delim)')
+  let lines = map(a:strings, 's:SplitDelim(v:val, a:delim, blimit)')
 
   " Strip spaces
   "   - Only from non-delimiters; spaces in delimiters must have been matched
@@ -359,7 +379,7 @@ function! tabular#DoGTabularize()
 endfunction
 
 function! s:SplitDelimTest(string, delim, expected)
-  let result = s:SplitDelim(a:string, a:delim)
+  let result = s:SplitDelim(a:string, a:delim, 0)
 
   if result !=# a:expected
     echomsg 'Test failed!'

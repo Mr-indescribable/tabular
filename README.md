@@ -1,29 +1,37 @@
-Tabular
-==============
-Sometimes, it's useful to line up text.  Naturally, it's nicer to have the
-computer do this for you, since aligning things by hand quickly becomes
-unpleasant.  While there are other plugins for aligning text, the ones I've
-tried are either impossibly difficult to understand and use, or too simplistic
-to handle complicated tasks.  This plugin aims to make the easy things easy
-and the hard things possible, without providing an unnecessarily obtuse
-interface.  It's still a work in progress, and criticisms are welcome.
+## Mr.Indescribable's Fork of Tabular
 
-See [Aligning Text with Tabular.vim](http://vimcasts.org/episodes/aligning-text-with-tabular-vim/)
-for a screencast that shows how Tabular.vim works.
+Tabular offers a conveniet way to format code, it does well in formatting whole lines of code.
 
-See [doc/Tabular.txt](http://raw.github.com/godlygeek/tabular/master/doc/Tabular.txt)
-for detailed documentation.
+**BUT**, what was not very conveniet is the way it implements the limited splitting, [which](https://github.com/godlygeek/tabular/blob/master/doc/Tabular.txt#L133) is painful to use:
 
-Installation
-==============
-If you don't have a preferred installation method, I recommend installing
-[pathogen.vim](https://github.com/tpope/vim-pathogen), and then simply
-copy and paste:
+```
+But, what if you only wanted to act on the first comma on the line, rather than
+all of the commas on the line?  Let's say we want everything before the first
+comma right aligned, then the comma, then everything after the comma left
+aligned:
+>
+    abc,def,ghi
+    a,b
+    a,b,c
+  :Tabularize /^[^,]*\zs,/r0c0l0
+    abc,def,ghi
+      a,b
+      a,b,c
+<
+```
 
-    mkdir -p ~/.vim/bundle
-    cd ~/.vim/bundle
-    git clone git://github.com/godlygeek/tabular.git
+So, here comes the question: **what if you only wanted to act on the first 1000 commas on the line?**
 
-Once help tags have been generated (either using Pathogen's `:Helptags`
-command, or by pointing vim's `:helptags` command at the directory where you
-installed Tabular), you can view the manual with `:help tabular`.
+And here is the sulotion:
+
+```
+:Tabularize /,/b1000
+:Tabularize /,/b1000l1r1c1
+```
+
+I implemented a new grammar for the format string, with an **optional** `b` bit placed at the **START** of the format string, you can specify any times of split you want instead of using that obscure regex grammar.
+
+
+----------
+
+See also: [The original README.md](ORIGINAL-README.md)
